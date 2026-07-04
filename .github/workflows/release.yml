@@ -6,9 +6,19 @@ on:
       - 'v*'
   workflow_dispatch:
     inputs:
-      version:
-        description: 'Version to release (e.g., v1.0.0)'
+      bump_type:
+        description: 'Version bump type'
         required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      skip_build:
+        description: 'Skip build (only bump version)'
+        required: false
+        type: boolean
+        default: false
 
 env:
   GO_VERSION: '1.25'
@@ -16,23 +26,110 @@ env:
   WAILS_VERSION: 'v3.0.0-alpha2.111'
 
 jobs:
+  version-bump:
+    name: Bump Version
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.bump_type != ''
+    outputs:
+      new_version: ${{ steps.bump.outputs.new_version }}
+      tag_name: ${{ steps.bump.outputs.tag_name }}
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump version
+        id: bump
+        run: |
+          # Read current version
+          CURRENT_VERSION=$(cat VERSION)
+          echo "Current version: $CURRENT_VERSION"
+
+          # Parse version parts
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT_VERSION"
+
+          # Bump version based on type
+          case "${{ github.event.inputs.bump_type }}" in
+            major)
+              MAJOR=$((MAJOR + 1))
+              MINOR=0
+              PATCH=0
+              ;;
+            minor)
+              MINOR=$((MINOR + 1))
+              PATCH=0
+              ;;
+            patch)
+              PATCH=$((PATCH + 1))
+              ;;
+          esac
+
+          NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          TAG_NAME="v${NEW_VERSION}"
+
+          echo "New version: $NEW_VERSION"
+          echo "Tag name: $TAG_NAME"
+
+          # Update VERSION file
+          echo "$NEW_VERSION" > VERSION
+
+          # Update build/config.yml
+          sed -i "s/version: \".*\"/version: \"$NEW_VERSION\"/" build/config.yml
+
+          # Update build/windows/info.json
+          sed -i "s/\"file_version\": \".*\"/\"file_version\": \"$NEW_VERSION\"/" build/windows/info.json
+          sed -i "s/\"ProductVersion\": \".*\"/\"ProductVersion\": \"$NEW_VERSION\"/" build/windows/info.json
+
+          # Set outputs
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+
+      - name: Commit version bump
+        run: |
+          git add VERSION build/config.yml build/windows/info.json
+          git commit -m "chore: bump version to ${{ steps.bump.outputs.new_version }}"
+          git push origin main
+
+      - name: Create and push tag
+        run: |
+          git tag ${{ steps.bump.outputs.tag_name }}
+          git push origin ${{ steps.bump.outputs.tag_name }}
+
   build-macos:
     name: Build macOS
     runs-on: macos-latest
+    needs: [version-bump]
+    if: |
+      always() &&
+      (needs.version-bump.result == 'success' || needs.version-bump.result == 'skipped') &&
+      (github.event.inputs.skip_build != 'true')
     strategy:
       matrix:
         arch: [amd64, arm64]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.version-bump.outputs.tag_name || github.ref }}
 
       - name: Get version
         id: version
         run: |
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
-          else
+          if [ "${{ needs.version-bump.outputs.tag_name }}" != "" ]; then
+            echo "version=${{ needs.version-bump.outputs.tag_name }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" == "push" ]; then
             echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          else
+            echo "version=v$(cat VERSION)" >> $GITHUB_OUTPUT
           fi
 
       - name: Setup Go
@@ -114,18 +211,27 @@ jobs:
   build-windows:
     name: Build Windows
     runs-on: windows-latest
+    needs: [version-bump]
+    if: |
+      always() &&
+      (needs.version-bump.result == 'success' || needs.version-bump.result == 'skipped') &&
+      (github.event.inputs.skip_build != 'true')
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.version-bump.outputs.tag_name || github.ref }}
 
       - name: Get version
         id: version
         shell: bash
         run: |
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
-          else
+          if [ "${{ needs.version-bump.outputs.tag_name }}" != "" ]; then
+            echo "version=${{ needs.version-bump.outputs.tag_name }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" == "push" ]; then
             echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          else
+            echo "version=v$(cat VERSION)" >> $GITHUB_OUTPUT
           fi
 
       - name: Setup Go
@@ -146,6 +252,10 @@ jobs:
         run: |
           cd frontend
           npm install
+
+      - name: Install NSIS
+        run: |
+          choco install nsis -y
 
       - name: Build application
         run: |
@@ -178,17 +288,26 @@ jobs:
   build-linux:
     name: Build Linux
     runs-on: ubuntu-latest
+    needs: [version-bump]
+    if: |
+      always() &&
+      (needs.version-bump.result == 'success' || needs.version-bump.result == 'skipped') &&
+      (github.event.inputs.skip_build != 'true')
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.version-bump.outputs.tag_name || github.ref }}
 
       - name: Get version
         id: version
         run: |
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
-          else
+          if [ "${{ needs.version-bump.outputs.tag_name }}" != "" ]; then
+            echo "version=${{ needs.version-bump.outputs.tag_name }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" == "push" ]; then
             echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          else
+            echo "version=v$(cat VERSION)" >> $GITHUB_OUTPUT
           fi
 
       - name: Setup Go
@@ -256,13 +375,21 @@ jobs:
 
   create-release:
     name: Create Release
-    needs: [build-macos, build-windows, build-linux]
+    needs: [version-bump, build-macos, build-windows, build-linux]
+    if: |
+      always() &&
+      (needs.version-bump.result == 'success' || needs.version-bump.result == 'skipped') &&
+      needs.build-macos.result == 'success' &&
+      needs.build-windows.result == 'success' &&
+      needs.build-linux.result == 'success'
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.version-bump.outputs.tag_name || github.ref }}
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -275,10 +402,12 @@ jobs:
       - name: Get version
         id: version
         run: |
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
-          else
+          if [ "${{ needs.version-bump.outputs.tag_name }}" != "" ]; then
+            echo "version=${{ needs.version-bump.outputs.tag_name }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" == "push" ]; then
             echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          else
+            echo "version=v$(cat VERSION)" >> $GITHUB_OUTPUT
           fi
 
       - name: Generate release notes
