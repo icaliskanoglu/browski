@@ -160,11 +160,11 @@ jobs:
 
       - name: Package application (NSIS)
         run: |
-          wails3 task windows:package:nsis
+          wails3 task windows:create:nsis:installer
 
       - name: Package application (MSIX)
         run: |
-          wails3 task windows:package:msix
+          wails3 task windows:create:msix:package
         continue-on-error: true
 
       - name: Upload artifacts
@@ -231,17 +231,17 @@ jobs:
 
       - name: Package AppImage
         run: |
-          wails3 task linux:package:appimage
+          wails3 task linux:create:appimage
         continue-on-error: true
 
       - name: Package deb
         run: |
-          wails3 task linux:package:deb
+          wails3 task linux:create:deb
         continue-on-error: true
 
       - name: Package rpm
         run: |
-          wails3 task linux:package:rpm
+          wails3 task linux:create:rpm
         continue-on-error: true
 
       - name: Upload artifacts

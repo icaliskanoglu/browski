@@ -228,18 +228,18 @@ RequestExecutionLevel "${REQUEST_EXECUTION_LEVEL}"
 
 !macro wails.associateFiles
     ; Create file associations
-    
-    !insertmacro APP_ASSOCIATE "html" "BrowskiHtml" "HTML File" "$INSTDIR\.ico" "Open with ${INFO_PRODUCTNAME}" "$INSTDIR\${PRODUCT_EXECUTABLE} $\"%1$\""
-    File "..\.ico"
-    
+
+    !insertmacro APP_ASSOCIATE "html" "BrowskiHtml" "HTML File" "$INSTDIR\icon.ico" "Open with ${INFO_PRODUCTNAME}" "$INSTDIR\${PRODUCT_EXECUTABLE} $\"%1$\""
+    File "..\icon.ico"
+
 !macroend
 
 !macro wails.unassociateFiles
     ; Delete app associations
-    
+
     !insertmacro APP_UNASSOCIATE "html" "BrowskiHtml"
-    Delete "$INSTDIR\.ico"
-    
+    Delete "$INSTDIR\icon.ico"
+
 !macroend
 
 !macro CUSTOM_PROTOCOL_ASSOCIATE PROTOCOL DESCRIPTION ICON COMMAND
