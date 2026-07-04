@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<dict>
+		<key>CFBundleDocumentTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleTypeExtensions</key>
+				<array>
+					<string>html</string>
+					<string>htm</string>
+				</array>
+				<key>CFBundleTypeIconFile</key>
+				<string/>
+				<key>CFBundleTypeName</key>
+				<string>HTML Document</string>
+				<key>CFBundleTypeRole</key>
+				<string>Viewer</string>
+				<key>LSItemContentTypes</key>
+				<array>
+					<string>public.html</string>
+				</array>
+			</dict>
+		</array>
+		<key>CFBundleExecutable</key>
+		<string>browski</string>
+		<key>CFBundleGetInfoString</key>
+		<string>A tool for quickly selecting which browser and profile to open URLs with</string>
+		<key>CFBundleIconFile</key>
+		<string>icons</string>
+		<key>CFBundleIconName</key>
+		<string>appicon</string>
+		<key>CFBundleIdentifier</key>
+		<string>com.browski.app</string>
+		<key>CFBundleName</key>
+		<string>Browski</string>
+		<key>CFBundlePackageType</key>
+		<string>APPL</string>
+		<key>CFBundleShortVersionString</key>
+		<string>1.0.0</string>
+		<key>CFBundleURLTypes</key>
+		<array>
+			<dict>
+				<key>CFBundleURLName</key>
+				<string>wails.com.http</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>http</string>
+				</array>
+			</dict>
+			<dict>
+				<key>CFBundleURLName</key>
+				<string>wails.com.https</string>
+				<key>CFBundleURLSchemes</key>
+				<array>
+					<string>https</string>
+				</array>
+			</dict>
+		</array>
+		<key>CFBundleVersion</key>
+		<string>1.0.0</string>
+		<key>LSApplicationCategoryType</key>
+		<string>public.app-category.utilities</string>
+		<key>LSMinimumSystemVersion</key>
+		<string>12.0.0</string>
+		<key>NSHighResolutionCapable</key>
+		<string>true</string>
+		<key>NSHumanReadableCopyright</key>
+		<string>(c) 2025, Browski</string>
+	</dict>
+</plist>

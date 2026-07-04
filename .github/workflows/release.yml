@@ -1,0 +1,330 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., v1.0.0)'
+        required: true
+
+env:
+  GO_VERSION: '1.25'
+  NODE_VERSION: '22'
+  WAILS_VERSION: 'v3.0.0-alpha2.111'
+
+jobs:
+  build-macos:
+    name: Build macOS
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install Wails
+        run: |
+          go install github.com/wailsapp/wails/v3/cmd/wails3@${{ env.WAILS_VERSION }}
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm install
+
+      - name: Import Code Signing Certificate
+        if: github.event_name != 'pull_request'
+        uses: apple-actions/import-codesign-certs@v2
+        with:
+          p12-file-base64: ${{ secrets.MACOS_CERTIFICATE }}
+          p12-password: ${{ secrets.MACOS_CERTIFICATE_PWD }}
+        continue-on-error: true
+
+      - name: Build application
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          # Build with version injected via ldflags
+          wails3 task darwin:build \
+            BUILD_FLAGS="-ldflags=\"-X main.version=${VERSION}\""
+        env:
+          GOARCH: ${{ matrix.arch }}
+
+      - name: Rename binary
+        run: |
+          if [ -f "bin/browski-v3" ]; then
+            mv "bin/browski-v3" "bin/browski"
+          fi
+
+      - name: Sign Application
+        if: github.event_name != 'pull_request'
+        run: |
+          codesign --deep --force --verify --verbose \
+            --sign "${{ secrets.MACOS_SIGNING_IDENTITY }}" \
+            --options runtime \
+            bin/Browski.app
+        continue-on-error: true
+
+      - name: Package application
+        run: |
+          wails3 task darwin:package
+        env:
+          GOARCH: ${{ matrix.arch }}
+
+      - name: Notarize Application
+        if: github.event_name != 'pull_request'
+        run: |
+          xcrun notarytool submit \
+            --apple-id "${{ secrets.APPLE_ID }}" \
+            --password "${{ secrets.APPLE_ID_PASSWORD }}" \
+            --team-id "${{ secrets.APPLE_TEAM_ID }}" \
+            --wait \
+            bin/*.dmg
+        continue-on-error: true
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: browski-macos-${{ matrix.arch }}
+          path: |
+            bin/**/*.dmg
+            bin/**/*.app
+
+  build-windows:
+    name: Build Windows
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get version
+        id: version
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install Wails
+        run: |
+          go install github.com/wailsapp/wails/v3/cmd/wails3@${{ env.WAILS_VERSION }}
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm install
+
+      - name: Build application
+        run: |
+          wails3 build
+
+      - name: Rename binary
+        shell: bash
+        run: |
+          if [ -f "bin/browski-v3.exe" ]; then
+            mv "bin/browski-v3.exe" "bin/browski.exe"
+          fi
+
+      - name: Package application (NSIS)
+        run: |
+          wails3 task windows:package:nsis
+
+      - name: Package application (MSIX)
+        run: |
+          wails3 task windows:package:msix
+        continue-on-error: true
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: browski-windows-amd64
+          path: |
+            bin/**/*.exe
+            bin/**/*.msix
+
+  build-linux:
+    name: Build Linux
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libgtk-4-dev \
+            libwebkitgtk-6.0-dev \
+            build-essential \
+            pkg-config
+
+      - name: Install Wails
+        run: |
+          go install github.com/wailsapp/wails/v3/cmd/wails3@${{ env.WAILS_VERSION }}
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm install
+
+      - name: Build application
+        run: |
+          wails3 build
+
+      - name: Rename binary
+        run: |
+          if [ -f "bin/browski-v3" ]; then
+            mv "bin/browski-v3" "bin/browski"
+          fi
+
+      - name: Package AppImage
+        run: |
+          wails3 task linux:package:appimage
+        continue-on-error: true
+
+      - name: Package deb
+        run: |
+          wails3 task linux:package:deb
+        continue-on-error: true
+
+      - name: Package rpm
+        run: |
+          wails3 task linux:package:rpm
+        continue-on-error: true
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: browski-linux-amd64
+          path: |
+            bin/**/*.AppImage
+            bin/**/*.deb
+            bin/**/*.rpm
+            bin/browski
+
+  create-release:
+    name: Create Release
+    needs: [build-macos, build-windows, build-linux]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Display structure
+        run: ls -R artifacts
+
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate release notes
+        id: notes
+        run: |
+          cat > release_notes.md << 'EOF'
+          ## What's New
+
+          Cross-platform browser profile picker with support for:
+          - Safari, Chrome, Edge, Arc, Brave, Opera, Vivaldi, Firefox
+          - Profile management and selection
+          - System tray integration
+          - Native icon extraction on macOS
+          - Single instance with IPC communication
+
+          ## Installation
+
+          ### macOS
+          Download `browski-macos-[arch].dmg` and drag to Applications.
+
+          ### Windows
+          Download and run `browski-windows-amd64-setup.exe`.
+
+          ### Linux
+          Download and run the AppImage, or install the .deb/.rpm package.
+
+          ## Changes
+
+          See full changelog in commit history.
+          EOF
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.version }}
+          name: Browski ${{ steps.version.outputs.version }}
+          body_path: release_notes.md
+          draft: false
+          prerelease: false
+          files: |
+            artifacts/**/*.dmg
+            artifacts/**/*.app
+            artifacts/**/*.exe
+            artifacts/**/*.msix
+            artifacts/**/*.AppImage
+            artifacts/**/*.deb
+            artifacts/**/*.rpm
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

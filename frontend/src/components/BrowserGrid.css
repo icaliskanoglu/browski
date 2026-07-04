@@ -1,0 +1,7 @@
+.browser-grid {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 12px;
+    padding: 16px;
+    background: #1e1e1e;
+}

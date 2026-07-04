@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Name=Browski
+Comment=Browser Profile Picker
+# The Exec line includes %u to pass the URL to the application
+Exec=/usr/local/bin/browski %u
+Terminal=false
+Type=Application
+Icon=browski
+Categories=Utility;
+StartupWMClass=browski
+
+MimeType=x-scheme-handler/http;x-scheme-handler/https; 
