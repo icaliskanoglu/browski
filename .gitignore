@@ -9,3 +9,11 @@ build/ios/xcode/overlay.json
 build/ios/xcode/gen/
 build/android/overlay.json
 build/android/gen/
+
+# IDE and system files
+.DS_Store
+.idea/
+
+# Build artifacts
+build/darwin/temp.plist
+build/darwin/appicon.icns
