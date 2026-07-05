@@ -22,7 +22,7 @@ on:
 
 env:
   GO_VERSION: '1.25'
-  NODE_VERSION: '22'
+  NODE_VERSION: '24'
   WAILS_VERSION: 'v3.0.0-alpha2.111'
 
 jobs:
@@ -37,7 +37,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -117,7 +117,7 @@ jobs:
         arch: [amd64, arm64]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
         with:
           ref: ${{ needs.version-bump.outputs.tag_name || github.ref }}
 
@@ -190,15 +190,24 @@ jobs:
         env:
           GOARCH: ${{ matrix.arch }}
 
-      - name: Notarize Application
-        if: github.event_name != 'pull_request'
+      - name: Create DMG (optional)
         run: |
-          xcrun notarytool submit \
-            --apple-id "${{ secrets.APPLE_ID }}" \
-            --password "${{ secrets.APPLE_ID_PASSWORD }}" \
-            --team-id "${{ secrets.APPLE_TEAM_ID }}" \
-            --wait \
-            bin/*.dmg
+          if [ -d "bin/browski.app" ]; then
+            # Create a simple DMG for distribution
+            hdiutil create -volname "Browski" -srcfolder bin/browski.app -ov -format UDZO bin/browski-${{ matrix.arch }}.dmg
+          fi
+        continue-on-error: true
+
+      - name: Notarize Application
+        if: github.event_name != 'pull_request' && hashFiles('bin/*.dmg') != ''
+        run: |
+          if [ -n "${{ secrets.APPLE_ID }}" ] && [ -f bin/*.dmg ]; then
+            xcrun notarytool submit bin/*.dmg \
+              --apple-id "${{ secrets.APPLE_ID }}" \
+              --password "${{ secrets.APPLE_ID_PASSWORD }}" \
+              --team-id "${{ secrets.APPLE_TEAM_ID }}" \
+              --wait
+          fi
         continue-on-error: true
 
       - name: Upload artifacts
@@ -219,7 +228,7 @@ jobs:
       (github.event.inputs.skip_build != 'true')
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
         with:
           ref: ${{ needs.version-bump.outputs.tag_name || github.ref }}
 
@@ -298,7 +307,7 @@ jobs:
       (github.event.inputs.skip_build != 'true')
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
         with:
           ref: ${{ needs.version-bump.outputs.tag_name || github.ref }}
 
@@ -390,7 +399,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
         with:
           ref: ${{ needs.version-bump.outputs.tag_name || github.ref }}
 
