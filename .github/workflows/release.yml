@@ -167,6 +167,7 @@ jobs:
             BUILD_FLAGS="-ldflags=\"-X main.version=${VERSION}\""
         env:
           GOARCH: ${{ matrix.arch }}
+          CGO_ENABLED: 1
 
       - name: Rename binary
         run: |
