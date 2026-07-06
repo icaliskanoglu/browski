@@ -113,7 +113,7 @@ Based on the distribution specification, here's the implementation checklist:
 
 #### 4.2 Artifact Management
 - [ ] Ensure consistent naming: App-<ver>-<platform>-<arch>.<ext>
-- [ ] Fix artifact path in Linux job (currently uses bin/browski-v3)
+- [ ] Fix artifact path in Linux job (currently uses bin/browski)
 - [ ] Add SHA256SUMS generation
 - [ ] Add GPG signing of checksums
 
@@ -144,7 +144,7 @@ Based on the distribution specification, here's the implementation checklist:
 
 ### Phase 1: Core Functionality (Current Sprint)
 1. Add CFBundleDocumentTypes to macOS Info.plist
-2. Fix Linux binary name in CI (browski-v3 → browski)
+2. Fix Linux binary name in CI (browski → browski)
 3. Create .desktop file for Linux
 4. Verify single-instance URL forwarding on Windows
 

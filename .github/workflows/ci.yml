@@ -66,12 +66,12 @@ jobs:
         shell: bash
         run: |
           if [ "$RUNNER_OS" == "Windows" ]; then
-            if [ -f "bin/browski-v3.exe" ]; then
-              mv "bin/browski-v3.exe" "bin/browski.exe"
+            if [ -f "bin/browski.exe" ]; then
+              mv "bin/browski.exe" "bin/browski.exe"
             fi
           else
-            if [ -f "bin/browski-v3" ]; then
-              mv "bin/browski-v3" "bin/browski"
+            if [ -f "bin/browski" ]; then
+              mv "bin/browski" "bin/browski"
             fi
           fi
 

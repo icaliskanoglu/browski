@@ -138,7 +138,7 @@ sudo apt-get install -y \
 
    # Build and test manually
    wails3 build
-   ./bin/browski-v3 https://github.com
+   ./bin/browski https://github.com
    ```
 
 3. **Format your code**

@@ -171,8 +171,8 @@ jobs:
 
       - name: Rename binary
         run: |
-          if [ -f "bin/browski-v3" ]; then
-            mv "bin/browski-v3" "bin/browski"
+          if [ -f "bin/browski" ]; then
+            mv "bin/browski" "bin/browski"
           fi
 
       - name: Sign Application
@@ -276,8 +276,8 @@ jobs:
       - name: Rename binary
         shell: bash
         run: |
-          if [ -f "bin/browski-v3.exe" ]; then
-            mv "bin/browski-v3.exe" "bin/browski.exe"
+          if [ -f "bin/browski.exe" ]; then
+            mv "bin/browski.exe" "bin/browski.exe"
           fi
 
       - name: Package application (NSIS)
@@ -356,8 +356,8 @@ jobs:
 
       - name: Rename binary
         run: |
-          if [ -f "bin/browski-v3" ]; then
-            mv "bin/browski-v3" "bin/browski"
+          if [ -f "bin/browski" ]; then
+            mv "bin/browski" "bin/browski"
           fi
 
       - name: Package AppImage

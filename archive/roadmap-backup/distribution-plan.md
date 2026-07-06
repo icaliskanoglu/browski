@@ -17,7 +17,7 @@ Complete Phase 1 (Core Functionality) of the distribution implementation and beg
 
 ### Task 2: Fix Linux Binary Name in CI ✅
 **Status**: COMPLETED
-- ✅ Update release.yml line 255 from `bin/browski-v3` to `bin/browski`
+- ✅ Update release.yml line 255 from `bin/browski` to `bin/browski`
 
 **Files Modified**:
 - `.github/workflows/release.yml`
