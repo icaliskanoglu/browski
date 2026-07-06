@@ -9,6 +9,8 @@
 				<array>
 					<string>html</string>
 					<string>htm</string>
+					<string>shtml</string>
+					<string>xhtml</string>
 				</array>
 				<key>CFBundleTypeIconFile</key>
 				<string/>
@@ -16,10 +18,6 @@
 				<string>HTML Document</string>
 				<key>CFBundleTypeRole</key>
 				<string>Viewer</string>
-				<key>LSItemContentTypes</key>
-				<array>
-					<string>public.html</string>
-				</array>
 			</dict>
 		</array>
 		<key>CFBundleExecutable</key>
@@ -67,5 +65,9 @@
 		<string>true</string>
 		<key>NSHumanReadableCopyright</key>
 		<string>(c) 2025, Browski</string>
+		<key>NSUserActivityTypes</key>
+		<array>
+			<string>NSUserActivityTypeBrowsingWeb</string>
+		</array>
 	</dict>
 </plist>
