@@ -16,4 +16,8 @@ build/android/gen/
 
 # Build artifacts
 build/darwin/temp.plist
-build/darwin/appicon.icns
+build/darwin/appicon.icnscleanup_*.sh
+fix_*.sh
+remove_*.sh
+**/.DS_Store
+.DS_Store

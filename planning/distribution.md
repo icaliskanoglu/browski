@@ -387,12 +387,12 @@ fi
 - [ ] Add universal binary build
 
 **build-windows job**:
-- [x] Fix binary renaming (browski-v3 → browski)
+- [x] Fix binary renaming (browski → browski)
 - [ ] Add NSIS packaging step
 - [ ] Add code signing step
 
 **build-linux job**:
-- [x] Fix artifact path (browski-v3 → browski)
+- [x] Fix artifact path (browski → browski)
 - [ ] Add .desktop file packaging
 - [ ] Add deb/rpm generation
 - [ ] Add AppImage creation

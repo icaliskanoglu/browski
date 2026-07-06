@@ -384,11 +384,11 @@ rm -rf node_modules package-lock.json
 npm install
 ```
 
-### Binary Name Wrong (browski-v3)
+### Binary Name Wrong (browski)
 
 **Cause**: Old Taskfile configuration
 
-**Solution**: Check `Taskfile.yml` has `APP_NAME: "browski"` (not "browski-v3")
+**Solution**: Check `Taskfile.yml` has `APP_NAME: "browski"` (not "browski")
 
 ---
 
