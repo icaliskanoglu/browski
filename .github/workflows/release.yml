@@ -169,12 +169,6 @@ jobs:
           GOARCH: ${{ matrix.arch }}
           CGO_ENABLED: 1
 
-      - name: Rename binary
-        run: |
-          if [ -f "bin/browski" ]; then
-            mv "bin/browski" "bin/browski"
-          fi
-
       - name: Sign Application
         if: github.event_name != 'pull_request'
         run: |
@@ -273,13 +267,6 @@ jobs:
         run: |
           wails3 build
 
-      - name: Rename binary
-        shell: bash
-        run: |
-          if [ -f "bin/browski.exe" ]; then
-            mv "bin/browski.exe" "bin/browski.exe"
-          fi
-
       - name: Package application (NSIS)
         run: |
           wails3 task windows:create:nsis:installer
@@ -353,12 +340,6 @@ jobs:
       - name: Build application
         run: |
           wails3 build
-
-      - name: Rename binary
-        run: |
-          if [ -f "bin/browski" ]; then
-            mv "bin/browski" "bin/browski"
-          fi
 
       - name: Package AppImage
         run: |

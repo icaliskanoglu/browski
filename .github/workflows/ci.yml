@@ -62,19 +62,6 @@ jobs:
       - name: Build application
         run: wails3 build
 
-      - name: Rename binary
-        shell: bash
-        run: |
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            if [ -f "bin/browski.exe" ]; then
-              mv "bin/browski.exe" "bin/browski.exe"
-            fi
-          else
-            if [ -f "bin/browski" ]; then
-              mv "bin/browski" "bin/browski"
-            fi
-          fi
-
       - name: Verify binary exists
         shell: bash
         run: |
